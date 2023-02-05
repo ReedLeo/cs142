@@ -27,7 +27,7 @@ p {
 }
 
 p:hover {
-    cursor: url(hand.cur), pointer;
+    cursor: pointer;
     background-color: yellow;
     color: goldenrod;;
 }
