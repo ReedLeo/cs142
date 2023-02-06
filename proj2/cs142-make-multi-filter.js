@@ -2,7 +2,7 @@
 
 function cs142MakeMultiFilter(originalArray) {
     let currentArray = [...originalArray];
-    let arrayFilterer = function (filterCriteria, callback) {
+    const arrayFilterer = function (filterCriteria, callback) {
         if (typeof filterCriteria !== "function") {
             return currentArray;
         }
@@ -11,6 +11,6 @@ function cs142MakeMultiFilter(originalArray) {
             callback.call(originalArray, currentArray);
         }
         return arrayFilterer;
-    }
+    };
     return arrayFilterer;
 }
