@@ -1,41 +1,185 @@
 'use strict';
 
 class DatePicker {
+    static daysInMonths = [
+        [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31], // common year
+        [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] // leap year
+    ];
+
+    static monthsName = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
+
     constructor(id, callback) {
         this.id = id;
         this.callback = callback;
     }
-    
-/* 
-    1. The calendar must display the days of the selected month in a grid with one line
-       for each week and one column for each day of the week.
-    2. Weeks run from Sunday on the left to Saturday on the right. The calendar must 
-       contain a header row displaying abbreviations for the days of the week, such as "Su", "Mo", etc.
-    3. Each day of the month is displayed as a number.
-    4. Some weeks when displayed in the date picker may contain days not in the selected month. 
-       These days should be displayed as the number in their respective month, but in a dimmed fashion to indicate they are not part of the current month.
-    5. All weeks displayed should contain at least one day belonging to the current month. 
-       Most months will display 5 weeks, but some months may display 4 or 6 depending on the days. T
-       he number of rows in your calendar should not be fixed.
-    6. The calendar must display the name of the month and year at the top of the calendar. 
-       In addition, it must display controls such as "<" and ">" that can be clicked to change the calendar's display to the previous or next month.
-    7. Clicking on a valid day of the current month should invoke the callback specified on the 
-       constructor with the arguments described above. Clicking on days belonging to months other 
-       than the current month should not invoke the callback.
-*/
-    render(date) {
-        const weekdayAbbreviations = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-        this.callback(this.id, {month:date.getMonth()+1, day:date.getDate(), year:date.getFullYear()});
-        let datePicker = window.document.getElementById(this.id);
-        
-        let week = window.document.createElement("DIV");
-        week.className = "week";
-        for (const x of weekdayAbbreviations) {
-            const li = window.document.createElement("LI");
-            li.textContent = x;
-            week.appendChild(li);
+
+    isLeapYear(year) {
+        return (year % 100 === 0) ? (year % 400 === 0) : (year % 4 === 0);
+    }
+
+    getPrefixDays(date) {
+        let firstDayOfCurMonth = new Date(date);
+        firstDayOfCurMonth.setDate(1);
+        const dayInWeek = firstDayOfCurMonth.getDay(); // 0-6
+        const prevMonth = (date.getMonth() > 0) ? (date.getMonth() - 1) : 11;
+        const isLeap = this.isLeapYear(date.getFullYear() - (prevMonth === 11 ? 1 : 0));
+        const prevMonthTotalDays = DatePicker.daysInMonths[isLeap ? 1 : 0][prevMonth];
+
+        let prefixDays = [];
+        for (let i = 0; i < dayInWeek; ++i) {
+            prefixDays.push(prevMonthTotalDays - dayInWeek + 1 + i);
+        }
+        return prefixDays;
+    }
+
+    getPostfixDays(date) {
+        let lastDayOfCurMonth = new Date(date);
+        const month = lastDayOfCurMonth.getMonth();
+        const isCurLeap = this.isLeapYear(date.getFullYear());
+        const curMonthTotalDays = DatePicker.daysInMonths[isCurLeap ? 1 : 0][month];
+        lastDayOfCurMonth.setDate(curMonthTotalDays);
+        const dayInWeek = lastDayOfCurMonth.getDay();
+
+        let postfixDays = [];
+        for (let i = dayInWeek + 1; i < 7; ++i) {
+            postfixDays.push(i - dayInWeek);
+        }
+        return postfixDays;
+    }
+
+    renderCalendarHeader(target, date) {
+
+        const year = date.getFullYear();
+        const monthIdx = date.getMonth(); // 0-11
+        target.textContent = `${DatePicker.monthsName[monthIdx]} ${year}`;
+    }
+
+    renderCalendarTable(target, date) {
+
+        const leapYear = this.isLeapYear(date.getFullYear());
+
+        const month = date.getMonth(); // 0-11
+        const totalDaysOfCurMonth = DatePicker.daysInMonths[leapYear ? 1 : 0][month];
+
+        const dayInMonth = date.getDate(); // 1-31
+        const dayInWeek = date.getDay(); // 0-6
+
+
+        const prefixDays = this.getPrefixDays(date);
+        const postfixDays = this.getPostfixDays(date);
+
+        let curDay = 1 - prefixDays.length;
+        if (prefixDays !== null && prefixDays.length > 0) {
+            const tr = window.document.createElement("TR");
+            tr.className = "cal-row";
+            tr.id = "cal-row-0";
+
+            for (const x of prefixDays) {
+                let td = window.document.createElement("TD");
+                td.className = "prev-month-days";
+                td.textContent = `${x}`;
+                tr.appendChild(td);
+                ++curDay;
+            }
+
+            for (let i = prefixDays.length; i < 7; ++i) {
+                let td = window.document.createElement("TD");
+                td.className = "cur-month-days";
+                if (curDay === dayInMonth) {
+                    td.className += " selected-day";
+                }
+
+                td.id = `cur-month-day-${curDay}`;
+                td.textContent = `${curDay}`;
+                tr.appendChild(td);
+                ++curDay;
+            }
+
+            target.appendChild(tr);
         }
 
-        datePicker.appendChild(week);
+        for (let row = 1; curDay <= totalDaysOfCurMonth; ++row) {
+            const tr = window.document.createElement("TR");
+            tr.className = "cal-row";
+            tr.id = `cal-row-${row}`;
+
+            for (let col = 0; (col < 7) && (curDay <= totalDaysOfCurMonth); ++col) {
+                let td = window.document.createElement("TD");
+                td.className = "cur-month-days";
+                if (curDay === dayInMonth) {
+                    td.className += " selected-day";
+                }
+
+                td.id = `cur-month-day-${curDay}`;
+                td.textContent = `${curDay}`;
+                tr.appendChild(td);
+                ++curDay;
+            }
+
+            // add the next months' days.
+            if (curDay > totalDaysOfCurMonth) {
+                for (let x of postfixDays) {
+                    let td = window.document.createElement("TD");
+                    td.className = "nxt-month-days";
+                    td.id = `nxt-month-day-${x}`;
+                    td.textContent = `${x}`;
+                    tr.appendChild(td);
+                    ++curDay;
+                }
+            }
+
+            target.appendChild(tr);
+        }
+    }
+
+    /* 
+        1. The calendar must display the days of the selected month in a grid with one line
+           for each week and one column for each day of the week.
+        2. Weeks run from Sunday on the left to Saturday on the right. The calendar must 
+           contain a header row displaying abbreviations for the days of the week, such as "Su", "Mo", etc.
+        3. Each day of the month is displayed as a number.
+        4. Some weeks when displayed in the date picker may contain days not in the selected month. 
+           These days should be displayed as the number in their respective month, but in a dimmed fashion to indicate they are not part of the current month.
+        5. All weeks displayed should contain at least one day belonging to the current month. 
+           Most months will display 5 weeks, but some months may display 4 or 6 depending on the days. T
+           he number of rows in your calendar should not be fixed.
+        6. The calendar must display the name of the month and year at the top of the calendar. 
+           In addition, it must display controls such as "<" and ">" that can be clicked to change the calendar's display to the previous or next month.
+        7. Clicking on a valid day of the current month should invoke the callback specified on the 
+           constructor with the arguments described above. Clicking on days belonging to months other 
+           than the current month should not invoke the callback.
+    */
+    render(date) {
+        this.callback(this.id, { month: date.getMonth() + 1, day: date.getDate(), year: date.getFullYear() });
+        let datePicker = window.document.getElementById(this.id);
+
+        datePicker.innerHTML = `
+            <div class="title" id="title-${this.id}">
+                <button class="prev-btn" id="prev-${this.id}"><</button>
+                <span class="cal-header" id="cal-header-${this.id}">Test Cal Header</span>
+                <button class="next-btn" id="next-${this.id}">></button>
+            </div>
+            <table class="calendar" id="calendar-${this.id}">
+                <tr class="week-header" id="week-header-${this.id}">
+                    <th>Sun</th>
+                    <th>Mon</th>
+                    <th>Tue</th>
+                    <th>Wed</th>
+                    <th>Thu</th>
+                    <th>Fri</th>
+                    <th>Sat</th>
+                </tr>
+            </table>
+        `;
+
+        const calHeader = window.document.getElementById(`cal-header-${this.id}`);
+        this.renderCalendarHeader(calHeader, date);
+
+        const calTable = window.document.getElementById(`calendar-${this.id}`);
+        this.renderCalendarTable(calTable, date);
+
     }
 }
