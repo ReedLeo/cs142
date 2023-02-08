@@ -65,74 +65,76 @@ class DatePicker {
         const totalDaysOfCurMonth = DatePicker.daysInMonths[leapYear ? 1 : 0][month];
 
         const dayInMonth = date.getDate(); // 1-31
-        const dayInWeek = date.getDay(); // 0-6
-
 
         const prefixDays = this.getPrefixDays(date);
         const postfixDays = this.getPostfixDays(date);
 
+        const calFragment = document.createDocumentFragment();
         let curDay = 1 - prefixDays.length;
         if (prefixDays !== null && prefixDays.length > 0) {
-            const tr = window.document.createElement("TR");
-            tr.className = "cal-row";
-            tr.id = "cal-row-0";
-
             for (const x of prefixDays) {
-                let td = window.document.createElement("TD");
-                td.className = "prev-month-days";
-                td.textContent = `${x}`;
-                tr.appendChild(td);
+                const li = document.createElement("LI");
+                li.className = "date flex-center prev-month-days light";
+
+                const div = document.createElement("DIV");
+                div.className = "date-num flex-center";
+                div.innerHTML = x;
+                li.appendChild(div);
+                calFragment.appendChild(li);
                 ++curDay;
             }
 
             for (let i = prefixDays.length; i < 7; ++i) {
-                let td = window.document.createElement("TD");
-                td.className = "cur-month-days";
+                const li = document.createElement("LI");
+                li.className = "date flex-center cur-month-days";
                 if (curDay === dayInMonth) {
-                    td.className += " selected-day";
+                    li.className += " active";
                 }
-
-                td.id = `cur-month-day-${curDay}`;
-                td.textContent = `${curDay}`;
-                tr.appendChild(td);
+                li.id = `cur-month-day-${curDay}`;
+                
+                const div = document.createElement("DIV");
+                div.className = "date-num flex-center";
+                div.innerHTML = curDay;
+                li.appendChild(div);
+                calFragment.appendChild(li);
                 ++curDay;
             }
-
-            target.appendChild(tr);
         }
 
         for (let row = 1; curDay <= totalDaysOfCurMonth; ++row) {
-            const tr = window.document.createElement("TR");
-            tr.className = "cal-row";
-            tr.id = `cal-row-${row}`;
-
             for (let col = 0; (col < 7) && (curDay <= totalDaysOfCurMonth); ++col) {
-                let td = window.document.createElement("TD");
-                td.className = "cur-month-days";
+                const li = window.document.createElement("LI");
+                li.className = "date flex-center cur-month-days";
                 if (curDay === dayInMonth) {
-                    td.className += " selected-day";
+                    li.className += " active";
                 }
-
-                td.id = `cur-month-day-${curDay}`;
-                td.textContent = `${curDay}`;
-                tr.appendChild(td);
+                li.id = `cur-month-day-${curDay}`;
+                
+                const div = document.createElement("DIV");
+                div.className = "date-num flex-center";
+                div.innerHTML = curDay;
+                li.appendChild(div);
+                calFragment.appendChild(li);
                 ++curDay;
             }
 
             // add the next months' days.
             if (curDay > totalDaysOfCurMonth) {
                 for (let x of postfixDays) {
-                    let td = window.document.createElement("TD");
-                    td.className = "nxt-month-days";
-                    td.id = `nxt-month-day-${x}`;
-                    td.textContent = `${x}`;
-                    tr.appendChild(td);
+                    let li = window.document.createElement("LI");
+                    li.className = "date flex-center nxt-month-days light";
+                    li.id = `nxt-month-day-${x}`;
+
+                    const div = document.createElement("DIV");
+                    div.className = "date-num flex-center";
+                    div.innerHTML = x;
+                    li.appendChild(div);
+                    calFragment.appendChild(li);
                     ++curDay;
                 }
             }
-
-            target.appendChild(tr);
         }
+        target.appendChild(calFragment);
     }
 
     /* 
@@ -157,28 +159,31 @@ class DatePicker {
         let datePicker = window.document.getElementById(this.id);
 
         datePicker.innerHTML = `
-            <div class="title" id="title-${this.id}">
-                <button class="prev-btn" id="prev-${this.id}"><</button>
-                <span class="cal-header" id="cal-header-${this.id}">Test Cal Header</span>
-                <button class="next-btn" id="next-${this.id}">></button>
+            <div class="calendar" id="calendar-${this.id}">
+                <div class="title" id="title-${this.id}">
+                    <button class="prev-btn" id="prev-${this.id}"><</button>
+                    <span class="cal-header" id="cal-header-${this.id}">Test Cal Header</span>
+                    <button class="next-btn" id="next-${this.id}">></button>
+                </div>
+                <div class="week-header" id="week-header-${this.id}">
+                    <li>Sun</li>
+                    <li>Mon</li>
+                    <li>Tue</li>
+                    <li>Wed</li>
+                    <li>Thu</li>
+                    <li>Fri</li>
+                    <li>Sat</li>
+                </div>
+                <div class="content" id="content-${this.id}">
+
+                </div>
             </div>
-            <table class="calendar" id="calendar-${this.id}">
-                <tr class="week-header" id="week-header-${this.id}">
-                    <th>Sun</th>
-                    <th>Mon</th>
-                    <th>Tue</th>
-                    <th>Wed</th>
-                    <th>Thu</th>
-                    <th>Fri</th>
-                    <th>Sat</th>
-                </tr>
-            </table>
         `;
 
         const calHeader = window.document.getElementById(`cal-header-${this.id}`);
         this.renderCalendarHeader(calHeader, date);
 
-        const calTable = window.document.getElementById(`calendar-${this.id}`);
+        const calTable = window.document.getElementById(`content-${this.id}`);
         this.renderCalendarTable(calTable, date);
 
     }
